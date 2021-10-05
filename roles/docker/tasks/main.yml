@@ -1,0 +1,38 @@
+---
+# tasks file for docker
+
+- name: Create the directory for docker
+  file:
+    path: docker
+    state: directory
+- name: Copy contents of docker/ from host into client 
+  copy:
+    src: docker/
+    dest: docker/
+
+- name: Build the image for sebp/elk from dockerfile directory
+  docker_image:
+    name: elkstack
+    build:
+      path: docker/elkstack/
+      pull: no
+    state: present
+    source: build
+
+- name: Purge IP and ensure the port is free
+  shell: iptables -F; iptables -X
+
+- name: Restart the Docker services
+  service:
+    name: docker
+    state: restarted
+
+- name: Run the ELK image and export into the client
+  docker_container:
+    name: elkstack
+    image: elkstack:latest
+    state: started
+    ports:
+      - 5704:5704
+      - 5302:5302
+      - 5022:5022 
